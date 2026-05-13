@@ -1,0 +1,20 @@
+---
+title: "SAS"
+cluster:
+  - 2e
+
+form:
+  - auto_modules_sas
+  - auto_accounts
+  - auto_queues
+  - global_bc_num_hours
+  - global_cores
+  - global_memory
+  - global_advanced
+  - global_sbatch_options
+  - bc_vnc_idle
+  - bc_vnc_resolution
+  - bc_email_on_started
+
+attributes:
+  bc_vnc_idle: 0

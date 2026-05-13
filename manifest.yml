@@ -1,0 +1,9 @@
+---
+name: SAS
+category: Interactive Apps
+subcategory: Desktop Applications
+role: batch_connect
+description: |
+  Launch a [SAS] GUI through a VNC session.
+
+  [SAS]: https://www.sas.com/
