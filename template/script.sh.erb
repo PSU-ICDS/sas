@@ -23,36 +23,48 @@
 # Start SAS
 #
 
-# Load the required environment (firefox needed in PATH for rbrowser remote browsing)
 module load firefox
 module load <%= context.auto_modules_sas %>
 
-# Launch rbrowser
+#
+# Launch rbrowser with temporary config
+#
 echo "Starting rbrowser process..."
 echo "HELPBROWSER=${HELPBROWSER}"
 echo "HELPHOST=${HELPHOST}"
 echo "HELPPORT=${HELPPORT}"
-which rbrowser
-rbrowser &
-RBROWSER_PID=$!
-echo "rbrowser pid:" $RBROWSER_PID
 
+RBROWSER_TMP=$(mktemp -d)
+
+cat > "${RBROWSER_TMP}/.rbrowser" <<EOF
+browserPath=firefox
+browserPause=5
+port=${HELPPORT}
+accessListCount=0
+accessListType=0
+EOF
+
+REAL_HOME="$HOME"
+HOME="${RBROWSER_TMP}" \
+XAUTHORITY="${XAUTHORITY:-${REAL_HOME}/.Xauthority}" \
+rbrowser &
+
+RBROWSER_PID=$!
+echo "rbrowser pid: $RBROWSER_PID"
+
+#
 # Launch SAS
+#
 set -x
-sas \
-  |& tee "<%= session.staged_root.join("run.log") %>"
+sas -HELPBROWSER "${HELPBROWSER}" \
+    -HELPHOST "${HELPHOST}" \
+    -HELPPORT "${HELPPORT}" \
+    |& tee "<%= session.staged_root.join("run.log") %>"
 APP_EXIT_CODE=${PIPESTATUS[0]}
 { set +x; } 2>/dev/null
 
-echo "killing rbrowser pid:" $RBROWSER_PID
-kill $RBROWSER_PID
-wait $RBROWSER_PID
+echo "killing rbrowser pid: $RBROWSER_PID"
+kill "$RBROWSER_PID"
+wait "$RBROWSER_PID" 2>/dev/null
+
 echo "rbrowser stopped"
-
-if [[ ${APP_EXIT_CODE} -ne 0 ]]; then
-cat | xmessage -file - -center <<- EOL
-Exited with non-zero status (${APP_EXIT_CODE}):
-
-$(cat "<%= session.staged_root.join("run.log") %>")
-EOL
-fi
