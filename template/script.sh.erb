@@ -21,8 +21,19 @@
 # Start SAS
 #
 
-# Load the required environment
+# Load the required environment (firefox needed in PATH for rbrowser remote browsing)
+module load firefox
 module load <%= context.auto_modules_sas %>
+
+# Launch rbrowser
+echo "Starting rbrowser process..."
+echo "HELPBROWSER=${HELPBROWSER}"
+echo "HELPHOST=${HELPHOST}"
+echo "HELPPORT=${HELPPORT}"
+which rbrowser
+rbrowser &
+RBROWSER_PID=$!
+echo "rbrowser pid:" $RBROWSER_PID
 
 # Launch SAS
 set -x
@@ -30,6 +41,11 @@ sas \
   |& tee "<%= session.staged_root.join("run.log") %>"
 APP_EXIT_CODE=${PIPESTATUS[0]}
 { set +x; } 2>/dev/null
+
+echo "killing rbrowser pid:" $RBROWSER_PID
+kill $RBROWSER_PID
+wait $RBROWSER_PID
+echo "rbrowser stopped"
 
 if [[ ${APP_EXIT_CODE} -ne 0 ]]; then
 cat | xmessage -file - -center <<- EOL
